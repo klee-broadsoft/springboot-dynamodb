@@ -1,0 +1,16 @@
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/BaseResponse.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/help/HelpController.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/UmsController.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/response/MarkAsReadResponse.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/MessageHistoryController.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/vo/MessageHistory.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/exception/UmsException.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/Body.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/response/AddMsgResponse.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/index/IndexController.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/Application.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/response/GetMsgResponse.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/Status.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/utils/ScanResultUtils.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/help/HelpBean.java
+/Users/klee/Dev/code-experiments/springboot-dynamodb/src/main/java/com/broadsoft/ums/boot/rest/dynamodb/vo/HistoryMsg.java

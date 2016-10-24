@@ -1,0 +1,17 @@
+com/broadsoft/ums/boot/rest/Status$ResponseTypes.class
+com/broadsoft/ums/boot/rest/Body.class
+com/broadsoft/ums/boot/rest/dynamodb/utils/ScanResultUtils.class
+com/broadsoft/ums/boot/rest/dynamodb/vo/MessageHistory.class
+com/broadsoft/ums/boot/rest/exception/UmsException.class
+com/broadsoft/ums/boot/rest/dynamodb/response/MarkAsReadResponse.class
+com/broadsoft/ums/boot/rest/help/HelpController.class
+com/broadsoft/ums/boot/rest/dynamodb/MessageHistoryController.class
+com/broadsoft/ums/boot/rest/dynamodb/response/GetMsgResponse.class
+com/broadsoft/ums/boot/rest/dynamodb/response/AddMsgResponse.class
+com/broadsoft/ums/boot/rest/dynamodb/vo/HistoryMsg.class
+com/broadsoft/ums/boot/rest/index/IndexController.class
+com/broadsoft/ums/boot/rest/UmsController.class
+com/broadsoft/ums/boot/Application.class
+com/broadsoft/ums/boot/rest/Status.class
+com/broadsoft/ums/boot/rest/BaseResponse.class
+com/broadsoft/ums/boot/rest/help/HelpBean.class
