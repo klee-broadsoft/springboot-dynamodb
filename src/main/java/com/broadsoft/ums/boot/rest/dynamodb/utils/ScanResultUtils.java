@@ -15,13 +15,18 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.broadsoft.ums.boot.rest.dynamodb.vo.HistoryMsg;
 import com.broadsoft.ums.boot.rest.dynamodb.vo.MessageHistory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 public class ScanResultUtils {
 	
 	private static ObjectMapper mapper = null;
-	
+	private static Gson gson = null;
 	static {
 		mapper = new ObjectMapper();
+		gson = new GsonBuilder().create();
 	}
 	
 	/**
@@ -110,7 +115,7 @@ public class ScanResultUtils {
 	 */
 	
 	
-	public static List<MessageHistory> extractMessageHistoryList (ScanResult sr) throws JsonParseException, JsonMappingException, IOException {
+	public static List<MessageHistory> extractMessageHistoryList (ScanResult sr) /*throws JsonParseException, JsonMappingException, IOException*/ {
 		
 		List<MessageHistory> mhList = new ArrayList<MessageHistory>();
 
@@ -129,9 +134,25 @@ public class ScanResultUtils {
 			mh.setIsStale(item.get("is_stale").getN().equals("1"));
 			mh.setReceivedTime(Long.parseLong(item.get("received_time").getN()));
 			mh.setUpdatedTime(Long.parseLong(item.get("updated_time").getN()));
-			//mh.setHistoryMsg(item.get("history_msg").getS());
-			histMsgJson = item.get("history_msg").getS();
-			hm = mapper.readValue(histMsgJson, HistoryMsg.class);
+			String histMsgEnvelopeJson = item.get("history_msg").getS();
+			JsonObject hmJsonObj = gson.fromJson(histMsgEnvelopeJson, JsonObject.class);
+			histMsgJson = hmJsonObj.get("HistoryMsg").toString();
+			
+			try {
+				hm = mapper.readValue(histMsgJson, HistoryMsg.class);
+			} catch (JsonParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				continue; // skip bad data for now
+			} catch (JsonMappingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				continue; // skip bad data for now
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				continue; // skip bad data for now
+			}
 			mh.setHistoryMsg(hm);
 			mhList.add(mh);	
 		}	
@@ -151,9 +172,14 @@ public class ScanResultUtils {
         item.put("updated_time", new AttributeValue().withN(Long.toString(mh.getUpdatedTime())));
         item.put("is_outbound", new AttributeValue().withN(mh.isOutbound()?"1":"0"));
         item.put("is_stale", new AttributeValue().withN(mh.isStale()?"1":"0"));
-        item.put("is_read", new AttributeValue().withN(mh.isStale()?"1":"0"));
-        String histMsgJson = mapper.writeValueAsString(mh.getHistoryMsg());
-        item.put("history_msg", new AttributeValue(histMsgJson));
+        item.put("is_read", new AttributeValue().withN(mh.isRead()?"1":"0"));
+        Map<String, HistoryMsg> hMsgEnvelope = new HashMap<String, HistoryMsg>();
+        
+        HistoryMsg hMsg = mh.getHistoryMsg();
+        hMsgEnvelope.put("HistoryMsg", hMsg);
+        String histMsgEnvelopeJson = gson.toJson(hMsgEnvelope, Map.class);
+        
+        item.put("history_msg", new AttributeValue(histMsgEnvelopeJson));
 
 		return item;
 	}

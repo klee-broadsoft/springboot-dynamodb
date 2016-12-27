@@ -330,4 +330,24 @@ public class HistoryMsg {
 	public void setGroupMemberJids(String groupMemberJids) {
 		this.groupMemberJids = groupMemberJids;
 	}
+	
+	
+	/**
+	 * 
+	 * @return The groupMemberJids
+	 */
+	@JsonProperty("msgEncryptBytes")
+	public String getMsgEncryptBytes() {
+		return msgEncryptBytes;
+	}
+
+	/**
+	 * 
+	 * @param groupMemberJids
+	 *            The groupMemberJids
+	 */
+	@JsonProperty("msgEncryptBytes")
+	public void setMsgEncryptBytes(String msgEncryptBytes) {
+		this.msgEncryptBytes = msgEncryptBytes;
+	}
 }

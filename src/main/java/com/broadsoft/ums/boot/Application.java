@@ -3,7 +3,9 @@ import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -58,7 +60,7 @@ import com.broadsoft.ums.boot.rest.UmsController;
  *
  */
 @EnableSwagger2
-@ComponentScan("springboot-dynamodb-experiment")
+@ComponentScan("com.broadsoft.ums.boot")
 @SpringBootApplication
 public class Application {
 
@@ -181,6 +183,38 @@ public class Application {
 				.withScanFilter(scanFilter);
 		ScanResult scanResult = dynamoDB.scan(scanRequest);
 		System.out.println("Result: " + scanResult);
+	}
+	
+	private static void queryTable2(String tableName) {
+		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
+		
+		Condition condition1 = new Condition().withComparisonOperator(
+				ComparisonOperator.GE.toString()).withAttributeValueList(
+				new AttributeValue().withN("1476207785493"));
+		Condition condition2 = new Condition().withComparisonOperator(
+				ComparisonOperator.EQ.toString()).withAttributeValueList(
+				new AttributeValue().withN("14"));
+
+		scanFilter.put("received_time", condition1);
+		scanFilter.put("user_uid", condition2);
+		
+		ScanRequest scanRequest = new ScanRequest(tableName)
+				.withScanFilter(scanFilter);
+		ScanResult scanResult = dynamoDB.scan(scanRequest);
+		System.out.println("Result2: " + scanResult);
+		List<Map<String, AttributeValue>> items = scanResult.getItems();
+		for (Map<String, AttributeValue> item: items) {
+			Set<String> keys = item.keySet();
+			for (String key: keys) {
+				AttributeValue attr = item.get(key);
+				String val = null;
+				// Assuming values are N or S for now
+				if ((val = attr.getN())==null) {
+					val = attr.getS();
+				} 
+				System.out.println("*** "+key+" = ["+val+"]");
+			}
+		}
 	}
 
 	private static void addMessages(String tableName) {
@@ -549,6 +583,7 @@ public class Application {
 			addMessages(tableName);
 
 			queryTable(tableName);
+			queryTable2(tableName);
 
 		} catch (AmazonServiceException ase) {
             System.out.println("Caught an AmazonServiceException, which means your request made it "
