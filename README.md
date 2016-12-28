@@ -13,6 +13,5 @@ Steps to experiment
 	This will compile and install artifacts to maven repo
 (3) Select project (springboot-synamodb-experiment) Right-click: Run As> Java Application > Select class Application (which has main())
 
-FIXME: This code is not working yet. 
-	- http://localhost:8080/swagger-ui.html does not show REST API declared in MessageHistoryController
+FIXME: This code is not fully working yet. addMessage(CREATE - POST) and getMessage(READ - GET) are working but markAsReadMessages(UPDATE - PATCH) is not working yet
 

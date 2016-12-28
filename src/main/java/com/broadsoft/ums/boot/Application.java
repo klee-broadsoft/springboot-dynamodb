@@ -1,4 +1,5 @@
 package com.broadsoft.ums.boot;
+
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -27,8 +28,10 @@ import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
@@ -45,16 +48,19 @@ import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
 import com.broadsoft.ums.boot.rest.UmsController;
 
 /**
- * Spring Boot application to experiment message_history table in DynamoDB as a microservice
+ * Spring Boot application to experiment message_history table in DynamoDB as a
+ * microservice
  * 
  * Arguments:
  * <ul>
- *   <li>? - help</li?>
- *   <li>-v - version</li>
+ * <li>? - help</li?>
+ * <li>-v - version</li>
  * </ul>
  * 
  *
@@ -65,9 +71,9 @@ import com.broadsoft.ums.boot.rest.UmsController;
 public class Application {
 
 	public static String tableName = "dynamodb_message_history";
-    private static AmazonDynamoDBClient dynamoDB;
-	
-    public static AmazonDynamoDBClient getDynamoDB() {
+	private static AmazonDynamoDBClient dynamoDB;
+
+	public static AmazonDynamoDBClient getDynamoDB() {
 		return dynamoDB;
 	}
 
@@ -76,147 +82,201 @@ public class Application {
 	}
 
 	private static void init() throws Exception {
-        /*
-         * The ProfileCredentialsProvider will return your [default]
-         * credential profile by reading from the credentials file located at
-         * (/Users/klee/.aws/credentials).
-         */
-        AWSCredentials credentials = null;
+		/*
+		 * The ProfileCredentialsProvider will return your [default] credential
+		 * profile by reading from the credentials file located at
+		 * (/Users/klee/.aws/credentials).
+		 */
+		AWSCredentials credentials = null;
 
-        try {
-            credentials = new ProfileCredentialsProvider("default").getCredentials();
-        } catch (Exception e) {
-            throw new AmazonClientException(
-                    "Cannot load the credentials from the credential profiles file. " +
-                    "Please make sure that your credentials file is at the correct " +
-                    "location (/Users/klee/.aws/credentials), and is in valid format.",
-                    e);
-        }
-        dynamoDB = new AmazonDynamoDBClient(credentials);
-        Region usWest2 = Region.getRegion(Regions.US_WEST_2);
-        dynamoDB.setRegion(usWest2);
-    }
-	
+		try {
+			credentials = new ProfileCredentialsProvider("default")
+					.getCredentials();
+		} catch (Exception e) {
+			throw new AmazonClientException(
+					"Cannot load the credentials from the credential profiles file. "
+							+ "Please make sure that your credentials file is at the correct "
+							+ "location (/Users/klee/.aws/credentials), and is in valid format.",
+					e);
+		}
+		dynamoDB = new AmazonDynamoDBClient(credentials);
+		Region usWest2 = Region.getRegion(Regions.US_WEST_2);
+		dynamoDB.setRegion(usWest2);
+	}
+
+	/*
+	 * crate a table
+	 */
+	// Table Description: {
+	// AttributeDefinitions: [{
+	// AttributeName: msg_uuid,
+	// AttributeType: S
+	// }, {
+	// AttributeName: received_time,
+	// AttributeType: N
+	// }, {
+	// AttributeName: updated_time,
+	// AttributeType: N
+	// }, {
+	// AttributeName: user_uid,
+	// AttributeType: S
+	// }],
+	// TableName: imp_message_history,
+	// KeySchema: [{
+	// AttributeName: user_uid,
+	// KeyType: HASH
+	// }, {
+	// AttributeName: received_time,
+	// KeyType: RANGE
+	// }],
+	// TableStatus: ACTIVE,
+	// CreationDateTime: Mon Oct 10 16: 48: 27 PDT 2016,
+	// ProvisionedThroughput: {
+	// NumberOfDecreasesToday: 0,
+	// ReadCapacityUnits: 5,
+	// WriteCapacityUnits: 5
+	// },
+	// TableSizeBytes: 0,
+	// ItemCount: 0,
+	// TableArn: arn: aws: dynamodb: us - west - 2: 420493971485: table /
+	// imp_message_history,
+	// LocalSecondaryIndexes: [{
+	// IndexName: updated_time_idx,
+	// KeySchema: [{
+	// AttributeName: user_uid,
+	// KeyType: HASH
+	// }, {
+	// AttributeName: updated_time,
+	// KeyType: RANGE
+	// }],
+	// Projection: {
+	// ProjectionType: INCLUDE,
+	// NonKeyAttributes: [is_outbound, is_stale, is_read, history_msg]
+	// },
+	// IndexSizeBytes: 0,
+	// ItemCount: 0,
+	// IndexArn: arn: aws: dynamodb: us - west - 2: 420493971485: table /
+	// imp_message_history / index / updated_time_idx
+	// }],
+	// GlobalSecondaryIndexes: [{
+	// IndexName: msg_uuid_idx,
+	// KeySchema: [{
+	// AttributeName: msg_uuid,
+	// KeyType: HASH
+	// }],
+	// Projection: {
+	// ProjectionType: INCLUDE,
+	// NonKeyAttributes: [is_outbound, is_stale, is_read, history_msg]
+	// },
+	// IndexStatus: ACTIVE,
+	// ProvisionedThroughput: {
+	// NumberOfDecreasesToday: 0,
+	// ReadCapacityUnits: 5,
+	// WriteCapacityUnits: 5
+	// },
+	// IndexSizeBytes: 0,
+	// ItemCount: 0,
+	// IndexArn: arn: aws: dynamodb: us - west - 2: 420493971485: table /
+	// imp_message_history / index / msg_uuid_idx
+	// }],
+	// }
+	// *******************************************/
 	private static void createTable(String tableName)
 			throws InterruptedException {
-		CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName);
-		
-		//ProvisionedThroughput
-		createTableRequest.setProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits((long)5).withWriteCapacityUnits((long)5));
-		
-		//AttributeDefinitions
-		ArrayList<AttributeDefinition> attributeDefinitions= new ArrayList<AttributeDefinition>();
-		attributeDefinitions.add(new AttributeDefinition().withAttributeName("msg_uuid").withAttributeType("S"));
-		attributeDefinitions.add(new AttributeDefinition().withAttributeName("user_uid").withAttributeType("N"));
-		attributeDefinitions.add(new AttributeDefinition().withAttributeName("received_time").withAttributeType("N"));
-		attributeDefinitions.add(new AttributeDefinition().withAttributeName("updated_time").withAttributeType("N"));
-		
+		CreateTableRequest createTableRequest = new CreateTableRequest()
+				.withTableName(tableName);
+
+		// ProvisionedThroughput
+		createTableRequest.setProvisionedThroughput(new ProvisionedThroughput()
+				.withReadCapacityUnits((long) 5).withWriteCapacityUnits(
+						(long) 5));
+
+		// AttributeDefinitions
+		ArrayList<AttributeDefinition> attributeDefinitions = new ArrayList<AttributeDefinition>();
+		attributeDefinitions.add(new AttributeDefinition().withAttributeName(
+				"msg_uuid").withAttributeType("S"));
+		attributeDefinitions.add(new AttributeDefinition().withAttributeName(
+				"user_uid").withAttributeType("N"));
+		attributeDefinitions.add(new AttributeDefinition().withAttributeName(
+				"received_time").withAttributeType("N"));
+		attributeDefinitions.add(new AttributeDefinition().withAttributeName(
+				"updated_time").withAttributeType("N"));
+
 		createTableRequest.setAttributeDefinitions(attributeDefinitions);
 		// Table KeySchema
 		ArrayList<KeySchemaElement> tableKeySchema = new ArrayList<KeySchemaElement>();
-		tableKeySchema.add(new KeySchemaElement().withAttributeName("user_uid").withKeyType(KeyType.HASH));  //Partition key
-		tableKeySchema.add(new KeySchemaElement().withAttributeName("received_time").withKeyType(KeyType.RANGE));  //Sort key
-		
+		tableKeySchema.add(new KeySchemaElement().withAttributeName("user_uid")
+				.withKeyType(KeyType.HASH)); // Partition key
+		tableKeySchema.add(new KeySchemaElement().withAttributeName(
+				"received_time").withKeyType(KeyType.RANGE)); // Sort key
+
 		createTableRequest.setKeySchema(tableKeySchema);
-		
+
 		// Local Index KeySchema
 		ArrayList<KeySchemaElement> localIndexKeySchema = new ArrayList<KeySchemaElement>();
-		localIndexKeySchema.add(new KeySchemaElement().withAttributeName("user_uid").withKeyType(KeyType.HASH));  //Partition key
-		localIndexKeySchema.add(new KeySchemaElement().withAttributeName("updated_time").withKeyType(KeyType.RANGE));  //Sort key
-		
+		localIndexKeySchema.add(new KeySchemaElement().withAttributeName(
+				"user_uid").withKeyType(KeyType.HASH)); // Partition key
+		localIndexKeySchema.add(new KeySchemaElement().withAttributeName(
+				"updated_time").withKeyType(KeyType.RANGE)); // Sort key
+
 		// Global Index KeySchema
 		ArrayList<KeySchemaElement> globalIndexKeySchema = new ArrayList<KeySchemaElement>();
-		globalIndexKeySchema.add(new KeySchemaElement().withAttributeName("msg_uuid").withKeyType(KeyType.HASH));  //Partition key
-		
+		globalIndexKeySchema.add(new KeySchemaElement().withAttributeName(
+				"msg_uuid").withKeyType(KeyType.HASH)); // Partition key
+
 		// Projected attributes
-		Projection projection = new Projection().withProjectionType(ProjectionType.INCLUDE);
+		Projection projection = new Projection()
+				.withProjectionType(ProjectionType.INCLUDE);
 		ArrayList<String> nonKeyAttributes = new ArrayList<String>();
 		nonKeyAttributes.add("is_read");
 		nonKeyAttributes.add("is_stale");
 		nonKeyAttributes.add("is_outbound");
-		nonKeyAttributes.add("history_msg"); // json representation of HistoryMsg - fed from MessageHistoryPlugin.createMsgHistory()
+		nonKeyAttributes.add("history_msg"); // json representation of
+												// HistoryMsg - fed from
+												// MessageHistoryPlugin.createMsgHistory()
 		projection.setNonKeyAttributes(nonKeyAttributes);
-		
+
 		// Local Secondary Index
 		LocalSecondaryIndex localSecondaryIndex = new LocalSecondaryIndex()
-		    .withIndexName("updated_time_idx").withKeySchema(localIndexKeySchema).withProjection(projection);
-		
+				.withIndexName("updated_time_idx")
+				.withKeySchema(localIndexKeySchema).withProjection(projection);
+
 		ArrayList<LocalSecondaryIndex> localSecondaryIndexes = new ArrayList<LocalSecondaryIndex>();
 		localSecondaryIndexes.add(localSecondaryIndex);
 		createTableRequest.setLocalSecondaryIndexes(localSecondaryIndexes);
 
 		// Global Secondary Index
 		GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex()
-		    .withIndexName("msg_uuid_idx").withKeySchema(globalIndexKeySchema).withProjection(projection);
-		
+				.withIndexName("msg_uuid_idx")
+				.withKeySchema(globalIndexKeySchema).withProjection(projection);
+
 		ArrayList<GlobalSecondaryIndex> globalSecondaryIndexes = new ArrayList<GlobalSecondaryIndex>();
 		globalSecondaryIndexes.add(globalSecondaryIndex);
-		globalSecondaryIndex.setProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits((long)5).withWriteCapacityUnits((long)5));
+		globalSecondaryIndex
+				.setProvisionedThroughput(new ProvisionedThroughput()
+						.withReadCapacityUnits((long) 5)
+						.withWriteCapacityUnits((long) 5));
 		createTableRequest.setGlobalSecondaryIndexes(globalSecondaryIndexes);
-		
+
 		// create table
 		TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
-		
+
 		// wait for the table to move into ACTIVE state
 		TableUtils.waitUntilActive(dynamoDB, tableName);
-		
+
 		// Describe our new table
-		DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
-		TableDescription tableDescription = (dynamoDB).describeTable(describeTableRequest).getTable();
+		DescribeTableRequest describeTableRequest = new DescribeTableRequest()
+				.withTableName(tableName);
+		TableDescription tableDescription = (dynamoDB).describeTable(
+				describeTableRequest).getTable();
 		System.out.println("Table Description: " + tableDescription);
 	}
 
-	private static void queryTable(String tableName) {
-		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
-		
-		Condition condition1 = new Condition().withComparisonOperator(
-				ComparisonOperator.GT.toString()).withAttributeValueList(
-				new AttributeValue().withN("1476207529273"));
-		Condition condition2 = new Condition().withComparisonOperator(
-				ComparisonOperator.EQ.toString()).withAttributeValueList(
-				new AttributeValue().withN("1"));
-
-		scanFilter.put("received_time", condition1);
-		scanFilter.put("is_read", condition2);
-		
-		ScanRequest scanRequest = new ScanRequest(tableName)
-				.withScanFilter(scanFilter);
-		ScanResult scanResult = dynamoDB.scan(scanRequest);
-		System.out.println("Result: " + scanResult);
-	}
-	
-	private static void queryTable2(String tableName) {
-		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
-		
-		Condition condition1 = new Condition().withComparisonOperator(
-				ComparisonOperator.GE.toString()).withAttributeValueList(
-				new AttributeValue().withN("1476207785493"));
-		Condition condition2 = new Condition().withComparisonOperator(
-				ComparisonOperator.EQ.toString()).withAttributeValueList(
-				new AttributeValue().withN("14"));
-
-		scanFilter.put("received_time", condition1);
-		scanFilter.put("user_uid", condition2);
-		
-		ScanRequest scanRequest = new ScanRequest(tableName)
-				.withScanFilter(scanFilter);
-		ScanResult scanResult = dynamoDB.scan(scanRequest);
-		System.out.println("Result2: " + scanResult);
-		List<Map<String, AttributeValue>> items = scanResult.getItems();
-		for (Map<String, AttributeValue> item: items) {
-			Set<String> keys = item.keySet();
-			for (String key: keys) {
-				AttributeValue attr = item.get(key);
-				String val = null;
-				// Assuming values are N or S for now
-				if ((val = attr.getN())==null) {
-					val = attr.getS();
-				} 
-				System.out.println("*** "+key+" = ["+val+"]");
-			}
-		}
-	}
-
+	/*
+	 * to test table, add several initial records
+	 * 
+	 * @param tableName
+	 */
 	private static void addMessages(String tableName) {
 		Map<String, AttributeValue> item = newItem(
 				"36522143-71fd-4cdf-b6b5-e8bab8811083",
@@ -451,159 +511,166 @@ public class Application {
 		putItemRequest = new PutItemRequest(tableName, item);
 		putItemResult = dynamoDB.putItem(putItemRequest);
 		System.out.println("Result: " + putItemResult);
+
 	}
 
-//	private static String createTable() throws InterruptedException {
-//		String tableName = "dynamodb_message_history";
-//
-//		createTable(tableName);
-//        /*******************************************
-//		Table Description: {
-//			AttributeDefinitions: [{
-//				AttributeName: msg_uuid,
-//				AttributeType: S
-//			}, {
-//				AttributeName: received_time,
-//				AttributeType: N
-//			}, {
-//				AttributeName: updated_time,
-//				AttributeType: N
-//			}, {
-//				AttributeName: user_uid,
-//				AttributeType: S
-//			}],
-//			TableName: imp_message_history,
-//			KeySchema: [{
-//				AttributeName: user_uid,
-//				KeyType: HASH
-//			}, {
-//				AttributeName: received_time,
-//				KeyType: RANGE
-//			}],
-//			TableStatus: ACTIVE,
-//			CreationDateTime: Mon Oct 10 16: 48: 27 PDT 2016,
-//			ProvisionedThroughput: {
-//				NumberOfDecreasesToday: 0,
-//				ReadCapacityUnits: 5,
-//				WriteCapacityUnits: 5
-//			},
-//			TableSizeBytes: 0,
-//			ItemCount: 0,
-//			TableArn: arn: aws: dynamodb: us - west - 2: 420493971485: table / imp_message_history,
-//			LocalSecondaryIndexes: [{
-//				IndexName: updated_time_idx,
-//				KeySchema: [{
-//					AttributeName: user_uid,
-//					KeyType: HASH
-//				}, {
-//					AttributeName: updated_time,
-//					KeyType: RANGE
-//				}],
-//				Projection: {
-//					ProjectionType: INCLUDE,
-//					NonKeyAttributes: [is_outbound, is_stale, is_read, history_msg]
-//				},
-//				IndexSizeBytes: 0,
-//				ItemCount: 0,
-//				IndexArn: arn: aws: dynamodb: us - west - 2: 420493971485: table / imp_message_history / index / updated_time_idx
-//			}],
-//			GlobalSecondaryIndexes: [{
-//				IndexName: msg_uuid_idx,
-//				KeySchema: [{
-//					AttributeName: msg_uuid,
-//					KeyType: HASH
-//				}],
-//				Projection: {
-//					ProjectionType: INCLUDE,
-//					NonKeyAttributes: [is_outbound, is_stale, is_read, history_msg]
-//				},
-//				IndexStatus: ACTIVE,
-//				ProvisionedThroughput: {
-//					NumberOfDecreasesToday: 0,
-//					ReadCapacityUnits: 5,
-//					WriteCapacityUnits: 5
-//				},
-//				IndexSizeBytes: 0,
-//				ItemCount: 0,
-//				IndexArn: arn: aws: dynamodb: us - west - 2: 420493971485: table / imp_message_history / index / msg_uuid_idx
-//			}],
-//		}
-//         *******************************************/
-//		return tableName;
-//	}
+	/*
+	 * FIXME
+	 * @param tableName
+	 */
+	private static void testUpdateMessage(String tableName) {
+		Map<String, AttributeValue> key = new HashMap<String, AttributeValue>();
+		key.put("msg_uuid", new AttributeValue()
+				.withS("4ec7cb7b-2669-49e6-bd51-4035dcdbad16"));
+
+		Map<String, AttributeValueUpdate> attributeUpdates = new HashMap<String, AttributeValueUpdate>();
+		attributeUpdates.put("is_read", new AttributeValueUpdate(
+				new AttributeValue().withN("1"), AttributeAction.PUT));
+
+		// UpdateItemRequest updateReq = new UpdateItemRequest(tableName, key,
+		// attributeUpdates);
+		UpdateItemRequest updateReq = new UpdateItemRequest()
+				.withTableName(tableName).withKey(key)
+				.withAttributeUpdates(attributeUpdates);
+		UpdateItemResult updateRes = Application.getDynamoDB().updateItem(
+				updateReq);
+		System.out.println("Update Result: " + updateRes);
+	}
+
+	/**
+	 * to test query
+	 * 
+	 * @param tableName
+	 */
+	private static void testQueryTable(String tableName) {
+		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
+
+		Condition condition1 = new Condition().withComparisonOperator(
+				ComparisonOperator.GT.toString()).withAttributeValueList(
+				new AttributeValue().withN("1476207529273"));
+		Condition condition2 = new Condition().withComparisonOperator(
+				ComparisonOperator.EQ.toString()).withAttributeValueList(
+				new AttributeValue().withN("1"));
+
+		scanFilter.put("received_time", condition1);
+		scanFilter.put("is_read", condition2);
+
+		ScanRequest scanRequest = new ScanRequest(tableName)
+				.withScanFilter(scanFilter);
+		ScanResult scanResult = dynamoDB.scan(scanRequest);
+		System.out.println("Result: " + scanResult);
+	}
+
+	/**
+	 * to test query 2
+	 * 
+	 * @param tableName
+	 */
+	private static void testQueryTable2(String tableName) {
+		HashMap<String, Condition> scanFilter = new HashMap<String, Condition>();
+
+		Condition condition1 = new Condition().withComparisonOperator(
+				ComparisonOperator.GE.toString()).withAttributeValueList(
+				new AttributeValue().withN("1476207785493"));
+		Condition condition2 = new Condition().withComparisonOperator(
+				ComparisonOperator.EQ.toString()).withAttributeValueList(
+				new AttributeValue().withN("14"));
+
+		scanFilter.put("received_time", condition1);
+		scanFilter.put("user_uid", condition2);
+
+		ScanRequest scanRequest = new ScanRequest(tableName)
+				.withScanFilter(scanFilter);
+		ScanResult scanResult = dynamoDB.scan(scanRequest);
+		System.out.println("Result2: " + scanResult);
+		List<Map<String, AttributeValue>> items = scanResult.getItems();
+		for (Map<String, AttributeValue> item : items) {
+			Set<String> keys = item.keySet();
+			for (String key : keys) {
+				AttributeValue attr = item.get(key);
+				String val = null;
+				// Assuming values are N or S for now
+				if ((val = attr.getN()) == null) {
+					val = attr.getS();
+				}
+				System.out.println("*** " + key + " = [" + val + "]");
+			}
+		}
+	}
 
 	private static Map<String, AttributeValue> newItem(String msgUuid,
 			int userUid, long receivedTime, long updatedTime,
 			boolean isOutbound, boolean isStale, boolean isRead,
 			String historyMsgJson) {
-        Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
-        item.put("msg_uuid", new AttributeValue(msgUuid));
-        item.put("user_uid", new AttributeValue().withN(Integer.toString(userUid)));
-        item.put("received_time", new AttributeValue().withN(Long.toString(receivedTime)));
-        item.put("updated_time", new AttributeValue().withN(Long.toString(updatedTime)));
-        item.put("is_outbound", new AttributeValue().withN(isOutbound?"1":"0"));
-        item.put("is_stale", new AttributeValue().withN(isStale?"1":"0"));
-        item.put("is_read", new AttributeValue().withN(isRead?"1":"0"));
-        item.put("history_msg", new AttributeValue(historyMsgJson));
+		Map<String, AttributeValue> item = new HashMap<String, AttributeValue>();
+		item.put("msg_uuid", new AttributeValue(msgUuid));
+		item.put("user_uid",
+				new AttributeValue().withN(Integer.toString(userUid)));
+		item.put("received_time",
+				new AttributeValue().withN(Long.toString(receivedTime)));
+		item.put("updated_time",
+				new AttributeValue().withN(Long.toString(updatedTime)));
+		item.put("is_outbound",
+				new AttributeValue().withN(isOutbound ? "1" : "0"));
+		item.put("is_stale", new AttributeValue().withN(isStale ? "1" : "0"));
+		item.put("is_read", new AttributeValue().withN(isRead ? "1" : "0"));
+		item.put("history_msg", new AttributeValue(historyMsgJson));
 
-        return item;
-    }
+		return item;
+	}
 
 	/**
 	 * @param args
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
 
-		if(args.length > 0) {
+		if (args.length > 0) {
 			logo();
-			if("?".equals(args[0])) {
+			if ("?".equals(args[0])) {
 				help();
 				System.exit(0);
-			} else if("-v".equalsIgnoreCase(args[0])) {
+			} else if ("-v".equalsIgnoreCase(args[0])) {
 				version();
 				System.exit(0);
-			} 
+			}
 		}
-		
-//		ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
-//
-//		logo();
-//
-//		info(context);
-		
-		init();
-		
-       try {
 
-        	//String tableName = "dynamodb_message_history";
-			
+		init();
+
+		try {
+
 			createTable(tableName);
-			
+
 			addMessages(tableName);
 
-			queryTable(tableName);
-			queryTable2(tableName);
+			testUpdateMessage(tableName); // TODO: Not working as it is
+
+			testQueryTable(tableName);
+			testQueryTable2(tableName);
 
 		} catch (AmazonServiceException ase) {
-            System.out.println("Caught an AmazonServiceException, which means your request made it "
-                    + "to AWS, but was rejected with an error response for some reason.");
-            System.out.println("Error Message:    " + ase.getMessage());
-            System.out.println("HTTP Status Code: " + ase.getStatusCode());
-            System.out.println("AWS Error Code:   " + ase.getErrorCode());
-            System.out.println("Error Type:       " + ase.getErrorType());
-            System.out.println("Request ID:       " + ase.getRequestId());
-        } catch (AmazonClientException ace) {
-            System.out.println("Caught an AmazonClientException, which means the client encountered "
-                    + "a serious internal problem while trying to communicate with AWS, "
-                    + "such as not being able to access the network.");
-            System.out.println("Error Message: " + ace.getMessage());
-        } catch (InterruptedException e) {
+			System.out
+					.println("Caught an AmazonServiceException, which means your request made it "
+							+ "to AWS, but was rejected with an error response for some reason.");
+			System.out.println("Error Message:    " + ase.getMessage());
+			System.out.println("HTTP Status Code: " + ase.getStatusCode());
+			System.out.println("AWS Error Code:   " + ase.getErrorCode());
+			System.out.println("Error Type:       " + ase.getErrorType());
+			System.out.println("Request ID:       " + ase.getRequestId());
+		} catch (AmazonClientException ace) {
+			System.out
+					.println("Caught an AmazonClientException, which means the client encountered "
+							+ "a serious internal problem while trying to communicate with AWS, "
+							+ "such as not being able to access the network.");
+			System.out.println("Error Message: " + ace.getMessage());
+		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-       
-		ConfigurableApplicationContext context = SpringApplication.run(Application.class, args);
+
+		ConfigurableApplicationContext context = SpringApplication.run(
+				Application.class, args);
 
 		logo();
 
@@ -614,52 +681,61 @@ public class Application {
 	@Bean
 	public Docket umsApi() {
 
-		return new Docket(DocumentationType.SWAGGER_2)
-		.groupName("ums")
-		.apiInfo(apiInfo())
-		.select()
-		.paths(PathSelectors.any())
-		.build();
+		return new Docket(DocumentationType.SWAGGER_2).groupName("ums")
+				.apiInfo(apiInfo()).select().paths(PathSelectors.any()).build();
 	}
 
 	private ApiInfo apiInfo() {
-		return new ApiInfoBuilder()
-		.title("UMS REST Sample")
-		.description("UMS REST Sample")
-		.termsOfServiceUrl("FREE for BSFT devs")
-		.contact("mgeorgiev@broadsoft.com")
-		.license("BSFT")
-		.licenseUrl("http://broadsoft.com")
-		.version("1.0")
-		.build();
+		return new ApiInfoBuilder().title("UMS REST Sample")
+				.description("UMS REST Sample")
+				.termsOfServiceUrl("FREE for BSFT devs")
+				.contact("mgeorgiev@broadsoft.com").license("BSFT")
+				.licenseUrl("http://broadsoft.com").version("1.0").build();
 	}
 
 	private static void logo() {
 		System.out.println();
 		System.out.println();
 
-		System.out.println("UUUUUUUU     UUUUUUUMMMMMMMM               MMMMMMMM  SSSSSSSSSSSSSSS ");
-		System.out.println("U::::::U     U::::::M:::::::M             M:::::::MSS:::::::::::::::S");
-		System.out.println("U::::::U     U::::::M::::::::M           M::::::::S:::::SSSSSS::::::S");
-		System.out.println("UU:::::U     U:::::UM:::::::::M         M:::::::::S:::::S     SSSSSSS");
-		System.out.println(" U:::::U     U:::::UM::::::::::M       M::::::::::S:::::S            ");
-		System.out.println(" U:::::D     D:::::UM:::::::::::M     M:::::::::::S:::::S            ");
-		System.out.println(" U:::::D     D:::::UM:::::::M::::M   M::::M:::::::MS::::SSSS         ");
-		System.out.println(" U:::::D     D:::::UM::::::M M::::M M::::M M::::::M SS::::::SSSSS    ");
-		System.out.println(" U:::::D     D:::::UM::::::M  M::::M::::M  M::::::M   SSS::::::::SS  ");
-		System.out.println(" U:::::D     D:::::UM::::::M   M:::::::M   M::::::M      SSSSSS::::S ");
-		System.out.println(" U:::::D     D:::::UM::::::M    M:::::M    M::::::M           S:::::S");
-		System.out.println(" U::::::U   U::::::UM::::::M     MMMMM     M::::::M           S:::::S");
-		System.out.println(" U:::::::UUU:::::::UM::::::M               M::::::SSSSSSS     S:::::S");
-		System.out.println("  UU:::::::::::::UU M::::::M               M::::::S::::::SSSSSS:::::S");
-		System.out.println("    UU:::::::::UU   M::::::M               M::::::S:::::::::::::::SS ");
-		System.out.println("      UUUUUUUUU     MMMMMMMM               MMMMMMMMSSSSSSSSSSSSSSS   ");
+		System.out
+				.println("UUUUUUUU     UUUUUUUMMMMMMMM               MMMMMMMM  SSSSSSSSSSSSSSS ");
+		System.out
+				.println("U::::::U     U::::::M:::::::M             M:::::::MSS:::::::::::::::S");
+		System.out
+				.println("U::::::U     U::::::M::::::::M           M::::::::S:::::SSSSSS::::::S");
+		System.out
+				.println("UU:::::U     U:::::UM:::::::::M         M:::::::::S:::::S     SSSSSSS");
+		System.out
+				.println(" U:::::U     U:::::UM::::::::::M       M::::::::::S:::::S            ");
+		System.out
+				.println(" U:::::D     D:::::UM:::::::::::M     M:::::::::::S:::::S            ");
+		System.out
+				.println(" U:::::D     D:::::UM:::::::M::::M   M::::M:::::::MS::::SSSS         ");
+		System.out
+				.println(" U:::::D     D:::::UM::::::M M::::M M::::M M::::::M SS::::::SSSSS    ");
+		System.out
+				.println(" U:::::D     D:::::UM::::::M  M::::M::::M  M::::::M   SSS::::::::SS  ");
+		System.out
+				.println(" U:::::D     D:::::UM::::::M   M:::::::M   M::::::M      SSSSSS::::S ");
+		System.out
+				.println(" U:::::D     D:::::UM::::::M    M:::::M    M::::::M           S:::::S");
+		System.out
+				.println(" U::::::U   U::::::UM::::::M     MMMMM     M::::::M           S:::::S");
+		System.out
+				.println(" U:::::::UUU:::::::UM::::::M               M::::::SSSSSSS     S:::::S");
+		System.out
+				.println("  UU:::::::::::::UU M::::::M               M::::::S::::::SSSSSS:::::S");
+		System.out
+				.println("    UU:::::::::UU   M::::::M               M::::::S:::::::::::::::SS ");
+		System.out
+				.println("      UUUUUUUUU     MMMMMMMM               MMMMMMMMSSSSSSSSSSSSSSS   ");
 
 		System.out.println();
 		System.out.println();
 		System.out.println("Broadsoft Gateway Emulator");
 		System.out.println();
-		System.out.println("for more information run with \"?\" as command line argument");
+		System.out
+				.println("for more information run with \"?\" as command line argument");
 		System.out.println();
 	}
 
@@ -671,7 +747,8 @@ public class Application {
 		System.out.println("-v version");
 		System.out.println();
 		System.out.println("API is accessible on: http://localhost:8080");
-		System.out.println("API doc is accessible on: http://localhost:8080/swagger-ui.html");
+		System.out
+				.println("API doc is accessible on: http://localhost:8080/swagger-ui.html");
 		System.out.println();
 	}
 
@@ -688,10 +765,14 @@ public class Application {
 		System.out.println();
 		try {
 			System.out.println("REST API is available on:");
-			System.out.println("\thttp://" + Inet4Address.getLocalHost().getHostAddress() + ":8080");
+			System.out.println("\thttp://"
+					+ Inet4Address.getLocalHost().getHostAddress() + ":8080");
 			System.out.println("\thttp://localhost:8080");
-			System.out.println("REST API documentation and REST HTML client are available on:");
-			System.out.println("\thttp://" + Inet4Address.getLocalHost().getHostAddress() + ":8080/swagger-ui.html");
+			System.out
+					.println("REST API documentation and REST HTML client are available on:");
+			System.out.println("\thttp://"
+					+ Inet4Address.getLocalHost().getHostAddress()
+					+ ":8080/swagger-ui.html");
 			System.out.println("\thttp://localhost:8080/swagger-ui.html");
 		} catch (UnknownHostException e) {
 			System.err.println("Cannot find IP Address of the current machine");
